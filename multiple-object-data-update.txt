@@ -1,0 +1,26 @@
+public override bool Update(Product entity)
+        {
+            var existingEntity = productRepo.GetById(entity.Id);
+            var existingProductCategories = existingEntity.ProductCategories;
+
+            var addableProductCategories = entity.ProductCategories.Where(ent => ent.Id==0).ToList();
+
+            var updatableProductCategories = entity.ProductCategories.Where(ent => ent.Id != 0).ToList();
+            
+            var deletableProductCategoryIds = existingProductCategories.Select(ent => ent.Id).Except(updatableProductCategories.Select(x => x.Id)).ToList();
+
+            var proCategoryRepo = new ProductCategoryRepository();
+
+            var deletableProductCategoryEntities = proCategoryRepo.GetByExpression(c => deletableProductCategoryIds.Contains(c.Id));
+
+            var IsProductCategoriesDelete = proCategoryRepo.DeleteRange(deletableProductCategoryEntities);
+
+            addableProductCategories.ForEach(x => { x.ProductId = entity.Id; });
+			
+            var IsProductCategoriesAdded = proCategoryRepo.AddRange(addableProductCategories);
+
+            var IsProductCategoriesUpdated = proCategoryRepo.UpdateRange(updatableProductCategories);
+
+
+            return base.Update(entity);
+        }
